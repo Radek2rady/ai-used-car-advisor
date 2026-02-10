@@ -15,40 +15,19 @@ export type RiskOutput = {
 };
 
 export function analyzeRisk(input: RiskInput): RiskOutput {
-  let score = 0;
-  const reasons: string[] = [];
+  const text = (input.adText ?? "").toLowerCase();
+  const hasRiskKeyword =
+    text.includes("accident") ||
+    text.includes("crash") ||
+    text.includes("totaled");
 
-  if (typeof input.mileage === "number" && input.mileage > 120_000) {
-    score += 40;
-    reasons.push("High mileage");
-  }
+  const label: RiskOutput["label"] = hasRiskKeyword ? "high" : "medium";
+  const score = hasRiskKeyword ? 100 : 50;
+  const reasons = [
+    hasRiskKeyword
+      ? "Ad mentions accident/crash/totaled"
+      : "No accident keywords in ad",
+  ];
 
-  if (typeof input.accidentCount === "number" && input.accidentCount > 0) {
-    score += 30;
-    reasons.push("Reported accidents");
-  }
-
-  if (typeof input.ownerCount === "number" && input.ownerCount > 2) {
-    score += 20;
-    reasons.push("Multiple prior owners");
-  }
-
-  if (typeof input.modelYear === "number" && input.modelYear < 2012) {
-    score += 15;
-    reasons.push("Older model year");
-  }
-
-  if (reasons.length === 0) {
-    reasons.push("No risk signals identified");
-  }
-
-  const normalized = Math.min(100, score);
-  let label: RiskOutput["label"] = "low";
-  if (normalized >= 60) {
-    label = "high";
-  } else if (normalized >= 30) {
-    label = "medium";
-  }
-
-  return { score: normalized, label, reasons };
+  return { score, label, reasons };
 }
